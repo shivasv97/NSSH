@@ -58,7 +58,7 @@ char ***pipe_commands(char**, int, int);
 int nssh_execute(char **, int);
 void add_hist(char *);
 void show_hist();
-void create_alias(char*);
+void create_alias(char*, char*);
 int getch(void);
 
 void editor_initialize();
@@ -219,7 +219,7 @@ int nssh_execute(char **argus, int argsleng) {
                 return 1;
         }
         if((strcmp(argus[0],"alias"))==0) {
-                create_alias(argus[1]);
+                create_alias(argus[1],argus[2]);
         }
 
         pid_t pid = fork(), wpid;
@@ -227,9 +227,14 @@ int nssh_execute(char **argus, int argsleng) {
                 int i=-1;
                 i=check_alias(argus[0]);
                 if(i > -1) {
-
-                        argus[0] = aliases[i].name;
-
+                        char* temp;
+                        char* temptok;
+                        //argus[0] = aliases[i].name;
+                        temp = aliases[i].name;
+                        temptok = strtok(temp," ");
+                        argus[0] = temptok;
+                        temptok = strtok(NULL, " ");
+                        argus[1] = temptok;
 
                 }
                 if (strcmp(argus[0], "showhist") == 0) { // show history of commands
@@ -254,6 +259,9 @@ int nssh_execute(char **argus, int argsleng) {
                    printf("outside the check_redir IF\n");
                  #endif*/
                 check_redir(argus, argsleng);
+                #ifdef DEBUG
+                printf("args after the check redir call: %s, %s\n", argus[0], argus[1]);
+                #endif
                 if (pipe_num = check_piping(argus, argsleng)>1) {
                         pipe_comm = pipe_commands(argus, argsleng, pipe_num);
                         pied_piper(pipe_comm, pipe_num);
@@ -343,17 +351,20 @@ int check_redir(char **args, int argsleng){
                 }
 
                 if(strcmp(args[i],"<")==0) {
-                        int fd = open(args[i+1], O_RDONLY|O_TRUNC, 0666);
+                        int fd = open(args[i+1], O_RDONLY, 0555);
                         dup2(fd, 0);
                         close(fd);
                         #ifdef DEBUG
                         printf("args inside the check_redir < are: %s\n", args[i]);
                         #endif
-                        int j = i;
-                        while (args[j] != NULL) {
-                                args[j] = NULL;
-                                j++;
-                        }
+                        /*  int j = i;
+                           while (args[j] != NULL) {
+                         #ifdef DEBUG
+                                  printf("new args are: %s\n", args[j]);
+                         #endif
+                                  args[j] = NULL;
+                                  j++;
+                           }*/
                         return 1;
                 }
                 i++;
@@ -780,7 +791,7 @@ void save(void)                            //function to save the file
 
         while(temp!=NULL)
         {
-                fprintf(fp,"%s",temp->s);    //writing the linked list contents to file
+                fprintf(fp,"%s\n",temp->s);    //writing the linked list contents to file
                 temp=temp->next;
         }
 
@@ -827,17 +838,54 @@ int getch(void) { // implementation of getch function, to extend functionality
 }
 /************************************************************************/
 /************************************************************************/
-void create_alias(char* tok){
+void create_alias(char* tok1, char* tok2){
 
-        //char temp[20];
+        //char temp[20]; strtok_r(tok,"=", &)
         //temp = argv[1];
-        char *name;
-        char *alias_name;
+
+        //char str[] = *tok;
+        printf("tok1: %s\n",tok1);
+        printf("tok2: %s\n",tok2);
+        char *tt;
+        char *rest = tok1;
         int i = 0;
-        char *n = strtok(tok,"=");
-        alias_name = n;
-        char *o = strtok(NULL,"=");
-        name=o;
+        char* strArray[2];
+        while ((tt = strtok_r(rest, "=", &rest)))
+        {
+                strArray[i] = malloc(strlen(tt) + 1);
+                strcpy(strArray[i],tt);
+                printf("-->>%s\n",strArray[i]);
+                i++;
+        }
+        char *name;
+        name = (char*)malloc(sizeof(char)*100);
+        char *alias_name;
+        alias_name = (char*)malloc(sizeof(char)*100);
+        strcpy(alias_name,strArray[0]);
+        strcpy(name,strArray[1]);
+        printf("%s\n",name);
+        printf("%s\n",alias_name);
+        if(tok2 != NULL) {
+                char sp[2];
+                sp[0] = ' ';
+                sp[1] = '\0';
+                strcat(name,sp);
+                //printf("%s\n",name);
+                strcat(name,tok2);
+                printf("-|->%s\n",name);
+        }
+
+
+
+        /*
+           char *name;
+           char *alias_name;
+           int i = 0;
+           char *n = strtok(tok,"=");
+           alias_name = n;
+           char *o = strtok(NULL,"=");
+
+           name=o; */
         int found = -1;
         for(int i = 0; i < alias_count; i++)
         {
