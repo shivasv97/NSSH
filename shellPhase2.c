@@ -18,7 +18,7 @@
 #define READ_END 0
 #define WRITE_END 1
 
-#define DEBUG // change to 'DEBUG' to enable debug messages
+#define NODEBUG // change to 'DEBUG' to enable debug messages
 
 
 struct nlist { /* table entry: */
@@ -258,7 +258,6 @@ int nssh_execute(char **argus, int argsleng) {
                  #ifdef DEBUG
                    printf("outside the check_redir IF\n");
                  #endif*/
-                check_redir(argus, argsleng);
                 #ifdef DEBUG
                 printf("args after the check redir call: %s, %s\n", argus[0], argus[1]);
                 #endif
@@ -266,6 +265,7 @@ int nssh_execute(char **argus, int argsleng) {
                         pipe_comm = pipe_commands(argus, argsleng, pipe_num);
                         pied_piper(pipe_comm, pipe_num);
                 }
+                check_redir(argus, argsleng);
                 execvp(argus[0], argus);   // exec call to execute commands
         }
         wait(NULL);
@@ -336,14 +336,17 @@ int check_redir(char **args, int argsleng){
            }*/
         while(args[i] != NULL) {
                 if(strcmp(args[i],">")==0) {
-                        int fd = open(args[i+1], O_WRONLY|O_CREAT|O_TRUNC, 0666);
+                        int fd = open(args[i+1], O_WRONLY|O_CREAT, 0666);
                         dup2(fd, 1);
                         close(fd);
+                        /*close(1);
+                           open(args[i+1], O_WRONLY|O_CREAT, 0666);*/
                         #ifdef DEBUG
                         printf("args inside the check_redir > are: %s\n", args[i]);
                         #endif
                         int j = i;
                         while (args[j] != NULL) {
+                                //while(j < argsleng) {
                                 args[j] = NULL;
                                 j++;
                         }
