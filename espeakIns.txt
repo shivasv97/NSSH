@@ -1,0 +1,3 @@
+echo "these are my notes" > text.txt
+espeak --stdout -f text.txt > text.wav
+paplay text.wav # you should hear "these are my notes"
