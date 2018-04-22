@@ -957,6 +957,8 @@ void speakop(char** args){
 	char buf[1024];
 	char a[64] ;
 	strcpy(a, args[1]);
+	strcat(a," ");
+	strcat(a, args[2]);
 	snprintf(buf, sizeof(buf), "%s | espeak",a);
 	system(buf);
 }
